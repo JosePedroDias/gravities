@@ -29,17 +29,18 @@
     var K_ALT   = 'ALT';
     var K_CTRL  = 'CTRL';*/
 
+    var CONTACTS = {};
 
 
-    var b2Vec2         = Box2D.Common.Math.b2Vec2;
-    var b2World        = Box2D.Dynamics.b2World;
-    var b2BodyDef      = Box2D.Dynamics.b2BodyDef;
-    var b2Body         = Box2D.Dynamics.b2Body;
-    var b2FixtureDef   = Box2D.Dynamics.b2FixtureDef;
-    var b2CircleShape  = Box2D.Collision.Shapes.b2CircleShape;
-    var b2PolygonShape = Box2D.Collision.Shapes.b2PolygonShape;
-    /*var b2Fixture      = Box2D.Dynamics.b2Fixture;
-    var b2MassData     = Box2D.Collision.Shapes.b2MassData;*/
+
+    var b2Vec2            = Box2D.Common.Math.b2Vec2;
+    var b2World           = Box2D.Dynamics.b2World;
+    var b2BodyDef         = Box2D.Dynamics.b2BodyDef;
+    var b2Body            = Box2D.Dynamics.b2Body;
+    var b2FixtureDef      = Box2D.Dynamics.b2FixtureDef;
+    var b2CircleShape     = Box2D.Collision.Shapes.b2CircleShape;
+    var b2PolygonShape    = Box2D.Collision.Shapes.b2PolygonShape;
+    var b2ContactListener = Box2D.Dynamics.b2ContactListener;
 
 
 
@@ -117,7 +118,7 @@
                     force.Normalize();
                     force.Multiply(strength);
                 }
-                this._b.m_body.ApplyForce(force, this._b.m_body.GetPosition()); // forceDir in newtons, center of application
+                this._b.ApplyForce(force, this._b.GetPosition()); // forceDir in newtons, center of application
             },
             applyPointGravity: function(pos, strength) {
                 var p1 = this.getPosition();
@@ -133,9 +134,9 @@
                     imp.Normalize();
                     imp.Multiply(strength);
                 }
-                this._b.m_body.ApplyImpulse(imp, this._b.m_body.GetPosition()); // forceDir in  N-seconds or kg-m/s, center of application
+                this._b.ApplyImpulse(imp, this._b.GetPosition()); // forceDir in  N-seconds or kg-m/s, center of application
             },
-            applyNormal: function(ctr, strength, tangentInstead, align, isImpulse) {
+            applyNormal: function(ctr, strength, o) { // o:align,tangent,impulse
                 var p1 = this.getPosition();
                 var v = new b2Vec2(
                     ctr[0] - p1[0],
@@ -143,36 +144,36 @@
                 );
                 v.Normalize();
 
-                if (align) {
-                    this._b.m_body.SetAngle( Math.atan2(v.y, v.x) );
+                if (o.align) {
+                    this._b.SetAngle( Math.atan2(v.y, v.x) );
                 }
 
                 v.Multiply(strength);
 
                 // The right-hand normal of vector (x, y) is (y, -x), and the left-hand normal is (-y, x).
-                if (tangentInstead) {
+                if (o.tangent) {
                     var t = v.x;
                     v.x = -v.y;
                     v.y = t;
                 }
 
-                if (isImpulse) {
-                    this._b.m_body.ApplyImpulse(v, this._b.m_body.GetPosition());
+                if (o.impulse) {
+                    this._b.ApplyImpulse(v, this._b.GetPosition());
                 }
                 else {
-                    this._b.m_body.ApplyForce(v, this._b.m_body.GetPosition());
+                    this._b.ApplyForce(v, this._b.GetPosition());
                 }
             },
             getPosition: function() {
                 if (this._b) {
-                    var p1 = this._b.m_body.GetPosition();
+                    var p1 = this._b.GetPosition();
                     return [p1.x, p1.y];
                 }
                 return this._pos;
             },
             getRotation: function() {
                 if (this._b) {
-                    return this._b.m_body.GetAngle();
+                    return this._b.GetAngle();
                 }
                 //return this._rot;
             },
@@ -213,7 +214,13 @@
             throw 'either radius or dims must be provided!';
         }
 
-        var body = WORLD.CreateBody(bodyDef).CreateFixture(fixDef);
+        var body = WORLD.CreateBody(bodyDef);
+        body.CreateFixture(fixDef);
+
+        if ('data' in o) {
+            body.SetUserData(o.data);
+        }
+
         return body;
     };
 
@@ -244,31 +251,51 @@
 
 
 
-    /*createBody({
-        dims:     [W, 20], // box
-        position: [W/2, H-10],
-        isStatic: true
-    });*/
-
     createBody({
         radius:   100,
         position: [200, 200],
-        isStatic: true
+        isStatic: true,
+        data:     'planet'
     });
 
     ball._b = createBody({
-        radius:   10, // circle
-        position: [W/4, 10]
+        restitution: 0,
+        radius:   10,
+        position: [W/4, 10],
+        data:     'ball'
     });
 
     box._b = createBody({
-        dims: [20, 20],
-        position: [W*3/4, 10]
+        dims:     [20, 20],
+        position: [W*3/4, 10],
+        data:     'box'
     });
 
-    //ball._b.m_body.SetPosition( new b2Vec2((W/4)/SCALE, 10/SCALE) );
-    //ball._b.m_body.ApplyForce( new b2Vec2(2, 0), ball._b.m_body.GetPosition() ); // forceDir, in newtons, center of application
-    // ball._b.m_body.SetPosition( new b2Vec2(0/SCALE, 0/SCALE) );*/
+
+
+    var ctctListener = new b2ContactListener();
+    var updateContacts = function(remove) {
+        return function(contact) {
+            var a = contact.GetFixtureA().GetBody().GetUserData();
+            var b = contact.GetFixtureB().GetBody().GetUserData();
+            var t;
+            if (a > b) { t = a; a = b; b = t;  } // swap to keep alphabetical order
+            CONTACTS[a+'_'+b] = !remove;
+        };
+    };
+    ctctListener.BeginContact = updateContacts(false);
+    ctctListener.EndContact   = updateContacts(true);
+    /*ctctListener.PreSolve = function(contact, oldManifold) {
+    };
+    ctctListener.PostSolve = function(contact, impulse) {
+        if (contact.GetFixtureA().GetBody().GetUserData() == 'ball' || contact.GetFixtureB().GetBody().GetUserData() == 'ball') {
+            var impulse = impulse.normalImpulses[0];
+            if (impulse < 0.2) return; //threshold ignore small impacts
+            world.ball.impulse = impulse > 0.6 ? 0.5 : impulse;
+            console.log(world.ball.impulse);
+        }
+    };*/
+    WORLD.SetContactListener(ctctListener);
 
 
 
@@ -276,63 +303,29 @@
         T = t * 0.001;
         DT = T - PREV_T;
 
-        /*var playerUpdated = false;
-        var spdL = 40;
-        var spdR = 90;
-        
-        if (KEYS[K_LEFT]) {  player.translate([-DT*spdL, 0], true); playerUpdated = true; }
-        if (KEYS[K_RIGHT]) { player.translate([ DT*spdL, 0], true); playerUpdated = true; }
-        if (KEYS[K_UP]) {    player.translate([0, -DT*spdL], true); playerUpdated = true; }
-        if (KEYS[K_DOWN]) {  player.translate([0,  DT*spdL], true); playerUpdated = true; }
-        
-        if (KEYS[K_SPACE]) { player.rotate((KEYS[K_SHIFT]?-1:1)*DT*spdR, true); playerUpdated = true; }
-        
-        if (playerUpdated) { player.setPosRot(); }*/
-
         WORLD.Step(DT*10, 10, 10); // step duration in secs, vel iters, pos iters
+        var boxPlanetContact = CONTACTS.box_planet;
+        //if (boxPlanetContact) { log('box_planet'); }
+        //CONTACTS = {};
         WORLD.ClearForces();
 
         ball.update();
         box.update();
 
-        ball.applyPointGravity(planet._pos, 2000);
-        box.applyPointGravity(planet._pos, 2000);
+        ball.applyPointGravity(planet._pos, 1000);
+         box.applyPointGravity(planet._pos, 1000);
+
+        if (boxPlanetContact && KEYS_WENT_DOWN[K_SPACE]) { // box must be on the ground!
+            //log('JUMP');
+            box.applyNormal(planet._pos, -10000000, {impulse:true});
+        }
 
         var dir = 0;
         if      (KEYS[K_LEFT]) {  dir =  1; }
         else if (KEYS[K_RIGHT]) { dir = -1; }
-        //if (dir) {
-            box.applyNormal(planet._pos, 10000*dir, true, true);
-        //}
+        box.applyNormal(planet._pos, 1000*dir, {align:true, tangent:true});
 
-        if (KEYS_WENT_DOWN[K_SPACE]) { // TODO must be on the ground!
-            box.applyNormal(planet._pos, -30000, false, false, true); // ctr, strength, align, isTangent, isImpulse
-        }
-
-        /*var p, force;
-
-        p = ball._b.m_body.GetPosition();
-        ball.setPosRot([p.x, p.y]);
-        force = new b2Vec2(
-            planet._pos[0] - p.x,
-            planet._pos[1] - p.y
-        );
-        force.Normalize();
-        force.Multiply(10000);
-        ball._b.m_body.ApplyForce(force, p); // forceDir, in newtons, center of application
-
-        p = box._b.m_body.GetPosition();
-        box.setPosRot([p.x, p.y], box._b.m_body.GetAngle() * 180/3.1415927);
-        force = new b2Vec2(
-            planet._pos[0] - p.x,
-            planet._pos[1] - p.y
-        );
-        force.Normalize();
-        force.Multiply(10000);
-        box._b.m_body.ApplyForce(force, p); // forceDir, in newtons, center of application
-        */
-
-
+        
 
         fpsText.attr({text:'FPS: ' + Math.round(1 / DT) });
 
