@@ -7,5 +7,12 @@
 
 ## External reference:
 
+### for box2D
+
 * http://www.box2dflash.org/docs/2.1a/reference/
+* http://blog.sethladd.com/2011/09/box2d-javascript-example-walkthrough.html
+
+
+### for snapSVG / SVG
+
 * http://snapsvg.io/docs/
