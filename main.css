@@ -3,8 +3,15 @@ body {
 	margin: 0;
 	overflow: hidden;
 	height: 100%;
+	font-family: sans-serif;
 }
 
 svg {
 	background-color: #DDD;
+}
+
+.instructions {
+	position: fixed;
+	left: 0;
+	bottom: 0;
 }
