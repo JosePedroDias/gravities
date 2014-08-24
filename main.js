@@ -8,7 +8,6 @@
      ***************/
     var W = 400;
     var H = 400;
-    var SCALE = 1;
 
     var DEG2RAD = 180 / Math.PI;
     //var RAD2DEG = Math.PI / 180;
@@ -29,18 +28,19 @@
     var K_ALT   = 'ALT';
     var K_CTRL  = 'CTRL';*/
 
-    var CONTACTS = {};
 
 
-
-    var b2Vec2            = Box2D.Common.Math.b2Vec2;
-    var b2World           = Box2D.Dynamics.b2World;
-    var b2BodyDef         = Box2D.Dynamics.b2BodyDef;
-    var b2Body            = Box2D.Dynamics.b2Body;
-    var b2FixtureDef      = Box2D.Dynamics.b2FixtureDef;
-    var b2CircleShape     = Box2D.Collision.Shapes.b2CircleShape;
-    var b2PolygonShape    = Box2D.Collision.Shapes.b2PolygonShape;
-    var b2ContactListener = Box2D.Dynamics.b2ContactListener;
+    var Vec2            = Box2D.Common.Math.b2Vec2;
+    //var Mat22           = Box2D.Common.Math.b2Mat22;
+    //var Transform       = Box2D.Common.Math.b2Transform;
+    var World           = Box2D.Dynamics.b2World;
+    var BodyDef         = Box2D.Dynamics.b2BodyDef;
+    var Body            = Box2D.Dynamics.b2Body;
+    var FixtureDef      = Box2D.Dynamics.b2FixtureDef;
+    //var ContactListener = Box2D.Dynamics.b2ContactListener;
+    var CircleShape     = Box2D.Collision.Shapes.b2CircleShape;
+    var PolygonShape    = Box2D.Collision.Shapes.b2PolygonShape;
+    //var AABB            = Box2D.Collision.b2AABB;
 
 
 
@@ -62,8 +62,8 @@
     };
 
 
-    //var WORLD = new b2World( new b2Vec2(0, 10), true); // gravityVec, doSleep
-    var WORLD = new b2World( new b2Vec2(0, 0), true); // gravityVec, doSleep
+
+    var WORLD = new World( new Vec2(0, 0), true); // gravityVec, doSleep
 
 
 
@@ -113,7 +113,7 @@
                 shape.attr.apply(shape, arguments);
             },
             applyForce: function(dir, strength) {
-                var force = new b2Vec2(dir[0], dir[1]);
+                var force = new Vec2(dir[0], dir[1]);
                 if (strength) {
                     force.Normalize();
                     force.Multiply(strength);
@@ -129,7 +129,7 @@
                 );
             },
             applyImpulse: function(dir, strength) {
-                var imp = new b2Vec2(dir[0], dir[1]);
+                var imp = new Vec2(dir[0], dir[1]);
                 if (strength) {
                     imp.Normalize();
                     imp.Multiply(strength);
@@ -138,7 +138,7 @@
             },
             applyNormal: function(ctr, strength, o) { // o:align,tangent,impulse
                 var p1 = this.getPosition();
-                var v = new b2Vec2(
+                var v = new Vec2(
                     ctr[0] - p1[0],
                     ctr[1] - p1[1]
                 );
@@ -164,10 +164,14 @@
                     this._b.ApplyForce(v, this._b.GetPosition());
                 }
             },
-            getPosition: function() {
+            getPosition: function(original) {
                 if (this._b) {
                     var p1 = this._b.GetPosition();
+                    if (original) { return p1; }
                     return [p1.x, p1.y];
+                }
+                if (original) {
+                    return new Vec2(this._pos[0], this._pos[1]);
                 }
                 return this._pos;
             },
@@ -190,25 +194,25 @@
     };
 
     var createBody = function(o) {
-        var fixDef = new b2FixtureDef();
+        var fixDef = new FixtureDef();
         fixDef.density     = o.density     || 1.0;
         fixDef.friction    = o.friction    || 0.5;
         fixDef.restitution = o.restitution || 0.2;
 
-        var bodyDef = new b2BodyDef();
-        bodyDef.type = o.isStatic ? b2Body.b2_staticBody : b2Body.b2_dynamicBody;
+        var bodyDef = new BodyDef();
+        bodyDef.type = o.isStatic ? Body.b2_staticBody : Body.b2_dynamicBody;
 
         if ('position' in o) {
-            bodyDef.position.x = o.position[0]/SCALE;
-            bodyDef.position.y = o.position[1]/SCALE;
+            bodyDef.position.x = o.position[0];
+            bodyDef.position.y = o.position[1];
         }
 
         if ('radius' in o) {
-            fixDef.shape = new b2CircleShape(o.radius/SCALE); // r
+            fixDef.shape = new CircleShape(o.radius); // r
         }
         else if ('dims' in o) {
-            fixDef.shape = new b2PolygonShape();
-            fixDef.shape.SetAsBox(o.dims[0]/2/SCALE, o.dims[1]/2/SCALE); // half w, half h            
+            fixDef.shape = new PolygonShape();
+            fixDef.shape.SetAsBox(o.dims[0]/2, o.dims[1]/2); // half w, half h            
         }
         else {
             throw 'either radius or dims must be provided!';
@@ -232,20 +236,14 @@
     });
     planet.attr({fill:'red'});
 
-    /*var player = createShape({
-        dims:     [20, 20],
-        position: [200, 200-100-10],
-        rotation: 45
-    });
-    player.attr({fill:'green'});*/
-
     var ball = createShape({
         radius: 10
     });
     ball.attr({fill:'blue'});
 
     var box = createShape({
-        dims: [20, 20]
+        dims: [20, 20],
+        restitution: 0
     });
     box.attr({fill:'green'});
 
@@ -273,50 +271,41 @@
 
 
 
-    var ctctListener = new b2ContactListener();
-    var updateContacts = function(remove) {
-        return function(contact) {
-            var a = contact.GetFixtureA().GetBody().GetUserData();
-            var b = contact.GetFixtureB().GetBody().GetUserData();
-            var t;
-            if (a > b) { t = a; a = b; b = t;  } // swap to keep alphabetical order
-            CONTACTS[a+'_'+b] = !remove;
-        };
-    };
-    ctctListener.BeginContact = updateContacts(false);
-    ctctListener.EndContact   = updateContacts(true);
-    /*ctctListener.PreSolve = function(contact, oldManifold) {
-    };
-    ctctListener.PostSolve = function(contact, impulse) {
-        if (contact.GetFixtureA().GetBody().GetUserData() == 'ball' || contact.GetFixtureB().GetBody().GetUserData() == 'ball') {
-            var impulse = impulse.normalImpulses[0];
-            if (impulse < 0.2) return; //threshold ignore small impacts
-            world.ball.impulse = impulse > 0.6 ? 0.5 : impulse;
-            console.log(world.ball.impulse);
-        }
-    };*/
-    WORLD.SetContactListener(ctctListener);
-
-
 
     var onFrame = function onFrame(t) {
         T = t * 0.001;
         DT = T - PREV_T;
 
         WORLD.Step(DT*10, 10, 10); // step duration in secs, vel iters, pos iters
-        var boxPlanetContact = CONTACTS.box_planet;
-        //if (boxPlanetContact) { log('box_planet'); }
-        //CONTACTS = {};
+        
         WORLD.ClearForces();
 
         ball.update();
         box.update();
 
+        var boxAboveStuff = false;
+        var bp = box.getPosition(true);
+        var v = bp.Copy();
+        v.Subtract( planet.getPosition(true) );
+        v.Normalize();
+        v.Multiply(-13);
+        v.Add(bp);
+        //log(v.x.toFixed(2), v.y.toFixed(2));
+        WORLD.QueryPoint(
+            function(fixture) {
+                //log('point', fixture.GetBody().GetUserData());
+                boxAboveStuff = true;
+            },
+            v
+        );
+
+
+
         ball.applyPointGravity(planet._pos, 1000);
          box.applyPointGravity(planet._pos, 1000);
 
-        if (boxPlanetContact && KEYS_WENT_DOWN[K_SPACE]) { // box must be on the ground!
-            //log('JUMP');
+        if (boxAboveStuff && KEYS_WENT_DOWN[K_SPACE]) { // box must be on the ground!
+            log('JUMP');
             box.applyNormal(planet._pos, -10000000, {impulse:true});
         }
 
