@@ -1,0 +1,21 @@
+[
+	{
+		"type": "planet",
+		"radius": 100,
+		"position": [200, 200],
+		"color": "red"
+	},
+	{
+		"type": "box",
+		"dims": [20, 20],
+		"controlledBy": "player",
+		"position": [],
+		"color": "blue"
+	},
+	{
+		"type": "ball",
+		"radius": 10,
+		"position": [],
+		"color": "green"
+	}
+]

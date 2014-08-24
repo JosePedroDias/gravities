@@ -6,8 +6,8 @@
     /***************
      * GLOBAL VARS *
      ***************/
-    var W = 400;
-    var H = 400;
+    var W = 800;
+    var H = 600;
 
     var DEG2RAD = 180 / Math.PI;
     //var RAD2DEG = Math.PI / 180;
@@ -22,14 +22,12 @@
     var K_LEFT  = 37;
     var K_RIGHT = 39;
     var K_SPACE = 32;
-    /*var K_UP    = 38;
-    var K_DOWN  = 40;
-    var K_SHIFT = 'SHIFT';
-    var K_ALT   = 'ALT';
-    var K_CTRL  = 'CTRL';*/
 
 
 
+    /**********************************************
+     * IMPORT BOX2D STUFF LOCALLY FOR CONVENIENCE *
+     **********************************************/
     var Vec2            = Box2D.Common.Math.b2Vec2;
     //var Mat22           = Box2D.Common.Math.b2Mat22;
     //var Transform       = Box2D.Common.Math.b2Transform;
@@ -37,13 +35,12 @@
     var BodyDef         = Box2D.Dynamics.b2BodyDef;
     var Body            = Box2D.Dynamics.b2Body;
     var FixtureDef      = Box2D.Dynamics.b2FixtureDef;
-    //var ContactListener = Box2D.Dynamics.b2ContactListener;
     var CircleShape     = Box2D.Collision.Shapes.b2CircleShape;
     var PolygonShape    = Box2D.Collision.Shapes.b2PolygonShape;
-    //var AABB            = Box2D.Collision.b2AABB;
 
 
 
+    /* request animation frame - generic */
     var raf = window.requestAnimationFrame       ||
               window.mozRequestAnimationFrame    ||
               window.webkitRequestAnimationFrame ||
@@ -53,12 +50,36 @@
         window.console.log.apply(window.console, arguments);
     };
 
-    var trueishKeys = function(o) {
-        var res = [];
-        for (var k in o) {
-            if (o[k]) { res.push(k); }
+    /* simplest AJAX */
+    var ajax = function(uri, cb) {
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', uri, true);
+        var cbInner = function() {
+            if (xhr.readyState === 4 && xhr.status === 200) {
+                return cb(null, JSON.parse(xhr.response));
+            }
+            cb('error requesting ' + uri);
+        };
+        xhr.onload  = cbInner;
+        xhr.onerror = cbInner;
+        xhr.send(null);
+    };
+
+
+
+    /**
+     * dot product of 2D vectors and vector projection
+     */
+    var dotProd = function(v1, v2) {
+        return v1.x * v2.x + v1.y * v2.y;
+    };
+
+    var compOfAInB = function(vA, vB, bIsNormalized) {
+        var n = dotProd(vA, vB);
+        if (!bIsNormalized) {
+            n /= vB.Length();
         }
-        return res.join(' ');
+        return n;
     };
 
 
@@ -147,6 +168,8 @@
                 if (o.align) {
                     this._b.SetAngle( Math.atan2(v.y, v.x) );
                 }
+
+                if (strength === 0) { return; }
 
                 v.Multiply(strength);
 
@@ -283,6 +306,7 @@
         ball.update();
         box.update();
 
+        // detect if anything exists 3px below the 20x20 box
         var boxAboveStuff = false;
         var bp = box.getPosition(true);
         var v = bp.Copy();
@@ -290,14 +314,7 @@
         v.Normalize();
         v.Multiply(-13);
         v.Add(bp);
-        //log(v.x.toFixed(2), v.y.toFixed(2));
-        WORLD.QueryPoint(
-            function(fixture) {
-                //log('point', fixture.GetBody().GetUserData());
-                boxAboveStuff = true;
-            },
-            v
-        );
+        WORLD.QueryPoint(function() { boxAboveStuff = true; }, v);
 
 
 
@@ -305,14 +322,30 @@
          box.applyPointGravity(planet._pos, 1000);
 
         if (boxAboveStuff && KEYS_WENT_DOWN[K_SPACE]) { // box must be on the ground!
-            log('JUMP');
+            //log('JUMP');
             box.applyNormal(planet._pos, -10000000, {impulse:true});
         }
 
         var dir = 0;
         if      (KEYS[K_LEFT]) {  dir =  1; }
         else if (KEYS[K_RIGHT]) { dir = -1; }
-        box.applyNormal(planet._pos, 1000*dir, {align:true, tangent:true});
+        else {
+            v = box.getPosition(true).Copy();
+            v.Subtract( planet.getPosition(true) );
+            v.Normalize();
+            v.CrossFV(1);
+            var vel = box._b.GetLinearVelocity();
+            var tangVel = compOfAInB(vel, v);
+
+            box.applyNormal(planet._pos, 0, {align:true, tangent:true});
+            v.Multiply(-tangVel*50);
+            box._b.ApplyForce( v , box.getPosition(true) );
+        }
+        
+        if (dir) {
+            box.applyNormal(planet._pos, 1000*dir, {align:true, tangent:true});
+        }
+        //} // try to stop side speed
 
         
 
@@ -336,13 +369,6 @@
         var kc = ev.keyCode;
         var isDown = (ev.type === 'keydown');
         KEYS[kc] = isDown;
-
-        /*KEYS[K_SHIFT] = ev.shiftKey;
-        KEYS[K_ALT]   = ev.altKey;
-        KEYS[K_CTRL]  = ev.ctrlKey;*/
-        //log('keys:', KEYS);
-        //log('keys:', trueishKeys(KEYS));
-
         var o = (isDown ? KEYS_WENT_DOWN : KEYS_WENT_UP);
         o[kc] = true;
     };
