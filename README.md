@@ -5,4 +5,7 @@ with the theme **Connected Worlds** by
 josepedrodias ([jose.pedro.dias@gmail.com](mailto:jose.pedro.dias@gmail.com))
 
 
-[external library credits](https://github.com/JosePedroDias/gravities/blob/gh-pages/CREDITS.md)
+
+* [TODO list               ](https://github.com/JosePedroDias/gravities/blob/gh-pages/TODO.md)
+* [external library credits](https://github.com/JosePedroDias/gravities/blob/gh-pages/CREDITS.md)
+* [run it                  ](http://josepedrodias.github.io/gravities/)

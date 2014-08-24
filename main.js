@@ -25,6 +25,15 @@
 
 
 
+    var PLANETS = [];
+    var BY_ID = {};
+    var CURRENT_PLANET;
+    var BOXES = [];
+    var PLAYER; // user controlled box
+    var BALLS = [];
+
+
+
     /**********************************************
      * IMPORT BOX2D STUFF LOCALLY FOR CONVENIENCE *
      **********************************************/
@@ -35,6 +44,7 @@
     var BodyDef         = Box2D.Dynamics.b2BodyDef;
     var Body            = Box2D.Dynamics.b2Body;
     var FixtureDef      = Box2D.Dynamics.b2FixtureDef;
+    var ContactListener = Box2D.Dynamics.b2ContactListener;
     var CircleShape     = Box2D.Collision.Shapes.b2CircleShape;
     var PolygonShape    = Box2D.Collision.Shapes.b2PolygonShape;
 
@@ -88,9 +98,9 @@
 
 
 
-    /****************************
-     * VECTOR GRAPHICS WITH SVG *
-     ****************************/
+    /*****************************************************
+     * VECTOR GRAPHICS WITH SVG + UTIL METHODS FOR BOX2D *
+     *****************************************************/
     var S = Snap;
     var s = S(W, H);
 
@@ -206,6 +216,10 @@
             },
             update: function() {
                 this.setPosRot(this.getPosition(), this.getRotation() * DEG2RAD);
+            },
+            remove: function() {
+                WORLD.DestroyBody(this._b);
+                g.remove();
             }
         };
 
@@ -253,45 +267,23 @@
 
 
 
-    var planet = createShape({
-        radius:   100,
-        position: [200, 200]
-    });
-    planet.attr({fill:'red'});
+    var ctctListener = new ContactListener();
+    ctctListener.BeginContact = function(contact) {
+        var a = contact.GetFixtureA().GetBody();
+        var b = contact.GetFixtureB().GetBody();
+        var pBody = PLAYER._b;
+        //return log(a.GetUserData(), b.GetUserData());
+        if (a !== pBody && b !== pBody) { return; }
+        var p = ( (a === pBody) ? b : a);
 
-    var ball = createShape({
-        radius: 10
-    });
-    ball.attr({fill:'blue'});
-
-    var box = createShape({
-        dims: [20, 20],
-        restitution: 0
-    });
-    box.attr({fill:'green'});
-
-
-
-    createBody({
-        radius:   100,
-        position: [200, 200],
-        isStatic: true,
-        data:     'planet'
-    });
-
-    ball._b = createBody({
-        restitution: 0,
-        radius:   10,
-        position: [W/4, 10],
-        data:     'ball'
-    });
-
-    box._b = createBody({
-        dims:     [20, 20],
-        position: [W*3/4, 10],
-        data:     'box'
-    });
-
+        var ud = p.GetUserData();
+        if (p !== CURRENT_PLANET._b && ud.indexOf('planet ') === 0) {
+            CURRENT_PLANET = BY_ID[ ud.split(' ')[1] ];
+            return;
+        }
+        log('player contact w/ ', ud);
+    };
+    WORLD.SetContactListener(ctctListener);
 
 
 
@@ -299,53 +291,93 @@
         T = t * 0.001;
         DT = T - PREV_T;
 
-        WORLD.Step(DT*10, 10, 10); // step duration in secs, vel iters, pos iters
+        WORLD.Step(DT*10, 10, 10); // box2D step - step duration in secs, vel iters, pos iters
         
         WORLD.ClearForces();
 
-        ball.update();
-        box.update();
-
-        // detect if anything exists 3px below the 20x20 box
-        var boxAboveStuff = false;
-        var bp = box.getPosition(true);
-        var v = bp.Copy();
-        v.Subtract( planet.getPosition(true) );
-        v.Normalize();
-        v.Multiply(-13);
-        v.Add(bp);
-        WORLD.QueryPoint(function() { boxAboveStuff = true; }, v);
 
 
+        // updates box2D-controlled visual entities
+        BALLS.forEach(function(ball) {
+            ball.update();
+        });
 
-        ball.applyPointGravity(planet._pos, 1000);
-         box.applyPointGravity(planet._pos, 1000);
+        var toKill = [];
 
-        if (boxAboveStuff && KEYS_WENT_DOWN[K_SPACE]) { // box must be on the ground!
-            //log('JUMP');
-            box.applyNormal(planet._pos, -10000000, {impulse:true});
-        }
+        BOXES.forEach(function(box) {
+            box.update();
 
-        var dir = 0;
-        if      (KEYS[K_LEFT]) {  dir =  1; }
-        else if (KEYS[K_RIGHT]) { dir = -1; }
-        else {
-            v = box.getPosition(true).Copy();
-            v.Subtract( planet.getPosition(true) );
+            // detect if anything exists 3px below the 20x20 box
+            var boxAboveStuff = false;
+            var bp = box.getPosition(true);
+            var v = bp.Copy();
+            v.Subtract( CURRENT_PLANET.getPosition(true) );
             v.Normalize();
-            v.CrossFV(1);
-            var vel = box._b.GetLinearVelocity();
-            var tangVel = compOfAInB(vel, v);
+            v.Multiply(-13);
+            v.Add(bp);
+            var cb = (box === PLAYER) ?
+                function(fixture) {
+                    boxAboveStuff = true;
+                    var udParts = fixture.GetBody().GetUserData().split(' ');
+                    if (udParts[0] === 'ball') {
+                        log('- #' + udParts[1] + ' (' +  udParts[0] + ')');
+                        toKill.push( BY_ID[ udParts[1] ] );
+                    }
+                } :
+                function() { boxAboveStuff = true; };
+            WORLD.QueryPoint(cb, v);
+            box._isAboveStuff = boxAboveStuff;
+        });
 
-            box.applyNormal(planet._pos, 0, {align:true, tangent:true});
-            v.Multiply(-tangVel*50);
-            box._b.ApplyForce( v , box.getPosition(true) );
-        }
+        toKill.forEach(function(visualShape) {
+            var udParts = visualShape._b.GetUserData().split(' ');
+            var type = udParts[0];
+            var arr = (type === 'box') ? BOXES : BALLS;
+            arr.splice(arr.indexOf(visualShape), 1);
+            visualShape.remove();
+        });
+
+
+
+        // apply current planet gravity to boxes and balls
+        var currPlanetPos = CURRENT_PLANET._pos;
+
+        BALLS.forEach(function(ball) {
+            ball.applyPointGravity(currPlanetPos, 1000);
+        });
         
-        if (dir) {
-            box.applyNormal(planet._pos, 1000*dir, {align:true, tangent:true});
-        }
-        //} // try to stop side speed
+        BOXES.forEach(function(box) {
+            box.applyPointGravity(currPlanetPos, 1000);
+        });
+
+
+
+        BOXES.forEach(function(box) {
+            if (box._isAboveStuff && KEYS_WENT_DOWN[K_SPACE]) { // box must be on the ground!
+                //log('JUMP');
+                box.applyNormal(currPlanetPos, -10000000, {impulse:true});
+            }
+
+            var dir = 0;
+            if      (KEYS[K_LEFT]) {  dir =  1; }
+            else if (KEYS[K_RIGHT]) { dir = -1; }
+            else {
+                var v = box.getPosition(true).Copy();
+                v.Subtract( CURRENT_PLANET.getPosition(true) );
+                v.Normalize();
+                v.CrossFV(1);
+                var vel = box._b.GetLinearVelocity();
+                var tangVel = compOfAInB(vel, v);
+
+                box.applyNormal(currPlanetPos, 0, {align:true, tangent:true});
+                v.Multiply(-tangVel*50);
+                box._b.ApplyForce( v , box.getPosition(true) );
+            }
+            
+            if (dir) {
+                box.applyNormal(currPlanetPos, 1000*dir, {align:true, tangent:true});
+            }
+        });
 
         
 
@@ -358,7 +390,7 @@
         KEYS_WENT_DOWN = {};
         KEYS_WENT_UP   = {};
     };
-    raf(onFrame);
+    //raf(onFrame);
 
 
 
@@ -372,7 +404,76 @@
         var o = (isDown ? KEYS_WENT_DOWN : KEYS_WENT_UP);
         o[kc] = true;
     };
-    window.addEventListener('keydown', onKey);
-    window.addEventListener('keyup',   onKey);
+
+
+
+    var loadLevel = function(levelName) {
+        ajax(levelName, function(err, objs) {
+            if (err) { return window.alert(err); }
+
+            var autoId = 0;
+
+            objs.forEach(function(o) {
+                var visualShape;
+                var id = o.id || 'auto' + (autoId++);
+                var data = [o.type, id].join(' ');
+                if (o.type === 'planet') {
+                    visualShape = createShape({
+                        radius:   o.radius,
+                        position: o.position
+                    });
+                    visualShape._b = createBody({
+                        radius:   o.radius,
+                        position: o.position,
+                        isStatic: true,
+                        data:     data
+                    });
+                    PLANETS.push(visualShape);
+                    CURRENT_PLANET = visualShape; // last planet is default
+                }
+                else if (o.type === 'box') {
+                    visualShape = createShape({
+                        dims:         o.dims,
+                        position:     o.position,
+                        controlledBy: o.controlledBy
+                    });
+                    visualShape._b = createBody({
+                        dims:     o.dims,
+                        position: o.position,
+                        data:     data
+                    });
+                    BOXES.push(visualShape);
+                }
+                else if (o.type === 'ball') {
+                    visualShape = createShape({
+                        radius:   o.radius,
+                        position: o.position
+                    });
+                    visualShape._b = createBody({
+                        radius:      o.radius,
+                        position:    o.position,
+                        //friction:    1,
+                        //restitution: 0,
+                        density:     0.1,
+                        data:        data
+                    });
+                    BALLS.push(visualShape);
+                }
+
+                BY_ID[id] = visualShape;
+
+                visualShape.attr({fill:o.color});
+            });
+
+            PLAYER = BY_ID['player'];
+    
+            // fire processes...
+            raf(onFrame);
+            window.addEventListener('keydown', onKey);
+            window.addEventListener('keyup',   onKey);
+        });
+    };
+
+    loadLevel('level1.json');
 
 })();
