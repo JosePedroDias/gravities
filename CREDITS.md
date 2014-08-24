@@ -2,7 +2,7 @@
 
 * [**box2dweb** for physics/collisions](https://code.google.com/p/box2dweb/downloads/detail?name=Box2dWeb-2.1a.3.zip)
 * [**snapsvg**  for vector graphics   ](https://github.com/adobe-webplatform/Snap.svg/archive/v0.3.0.zip)
-
+* [**soundjs**  for audio playback    ](https://github.com/CreateJS/SoundJS/releases/tag/release_v0.5.2)
 
 
 ## External reference:
@@ -19,3 +19,8 @@
 ### for snapSVG / SVG
 
 * [api](http://snapsvg.io/docs/)
+
+
+### for soundjs
+
+* [api](http://www.createjs.com/Docs/SoundJS/modules/SoundJS.html)
