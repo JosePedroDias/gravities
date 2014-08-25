@@ -2,8 +2,9 @@
 	/* http://www.jshint.com/docs/ https://github.com/jshint/jshint/blob/master/README.md */
 
     "globals": {
-        "Box2D": false,
-        "Snap":  false
+        "Box2D":    false,
+        "createjs": false,
+        "Snap":     false
     },
 
     "boss" :         false,

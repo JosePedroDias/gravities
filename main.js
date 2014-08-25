@@ -34,6 +34,46 @@
 
 
 
+    /*******
+     * SFX *
+     *******/
+    var play = function(soundId) {
+        createjs.Sound.play(soundId);
+    };
+
+    var preloadSfx = function(cb) {
+        var soundIds = [
+            'boing',
+            // 'explosion',
+            // 'force field',
+            // 'game over',
+            'item',
+            // 'metallic',
+            // 'near',
+            // 'off',
+            // 'pew',
+            'pow',
+            // 'sentry',
+            'squish',
+            // 'triangle',
+            // 'up'
+        ];
+        var remainingSounds = soundIds.length;
+
+        createjs.Sound.alternateExtensions = ['mp3'];
+        createjs.Sound.addEventListener('fileload', function(/*ev*/) {
+            --remainingSounds;
+            //log('loaded ' + ev.id);
+            if (remainingSounds === 0) { cb(null); }
+        });
+
+        soundIds.forEach(function(soundId) {
+            createjs.Sound.registerSound('sfx/' + soundId + '.ogg', soundId);
+        });
+    };
+    
+
+
     /**********************************************
      * IMPORT BOX2D STUFF LOCALLY FOR CONVENIENCE *
      **********************************************/
@@ -278,10 +318,11 @@
 
         var ud = p.GetUserData();
         if (p !== CURRENT_PLANET._b && ud.indexOf('planet ') === 0) {
+            play('pow');
             CURRENT_PLANET = BY_ID[ ud.split(' ')[1] ];
             return;
         }
-        log('player contact w/ ', ud);
+        //log('player contact w/ ', ud);
     };
     WORLD.SetContactListener(ctctListener);
 
@@ -334,6 +375,7 @@
             var type = udParts[0];
             var arr = (type === 'box') ? BOXES : BALLS;
             arr.splice(arr.indexOf(visualShape), 1);
+            play('item');
             visualShape.remove();
         });
 
@@ -355,6 +397,7 @@
         BOXES.forEach(function(box) {
             if (box._isAboveStuff && KEYS_WENT_DOWN[K_SPACE]) { // box must be on the ground!
                 //log('JUMP');
+                play('boing');
                 box.applyNormal(currPlanetPos, -10000000, {impulse:true});
             }
 
@@ -474,6 +517,16 @@
         });
     };
 
-    loadLevel('level1.json');
+
+
+    preloadSfx(function(err) {
+        if (err) { return window.alert(err); }
+        //log('DONE SFX', err);
+        //play('boing');
+
+        loadLevel('level1.json');
+    });
+
+    
 
 })();
