@@ -10,7 +10,7 @@ svg {
 	background-color: #7AF;
 }
 
-.instructions {
+.desktop .instructions {
 	position: fixed;
 	left: 0;
 	bottom: 0;

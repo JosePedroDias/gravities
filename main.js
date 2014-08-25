@@ -6,11 +6,10 @@
     /***************
      * GLOBAL VARS *
      ***************/
-    var W = 800;
-    var H = 600;
-
     var DEG2RAD = 180 / Math.PI;
     //var RAD2DEG = Math.PI / 180;
+
+    var SCREEN_DIMS;
 
     var     DT = 1 / 30;
     var PREV_T = 0 - DT;
@@ -141,8 +140,36 @@
     /*****************************************************
      * VECTOR GRAPHICS WITH SVG + UTIL METHODS FOR BOX2D *
      *****************************************************/
+    var hasTouch = !!(
+        'ontouchstart' in document.documentElement ||
+        'ontouchstart' in document
+    );
+
+
+
+    var s;
+    var onResize = function() {
+        if (hasTouch) { // HACK
+            SCREEN_DIMS = [screen.availWidth, screen.availHeight];
+        }
+        else {
+            SCREEN_DIMS = [window.innerWidth, window.innerHeight];
+        }
+        
+        /*log('resize', SCREEN_DIMS); // TODO
+        s.attr({ 
+            width:  SCREEN_DIMS[0],
+            height: SCREEN_DIMS[1]
+        });*/
+    };
+    onResize();
+
+
+
     var S = Snap;
-    var s = S(W, H);
+    s = S(SCREEN_DIMS[0], SCREEN_DIMS[1]);
+
+
 
     var fpsText = s.text(10, 20, 'FPS: ');
     fpsText.attr({'font-family': 'sans-serif'});
@@ -437,9 +464,9 @@
 
 
 
-    /*********************
-     * KEYBOARD HANDLING *
-     *********************/
+    /*******************************
+     * KEYBOARD AND TOUCH HANDLING *
+     *******************************/
     var onKey = function(ev) {
         var kc = ev.keyCode;
         var isDown = (ev.type === 'keydown');
@@ -447,6 +474,46 @@
         var o = (isDown ? KEYS_WENT_DOWN : KEYS_WENT_UP);
         o[kc] = true;
     };
+
+    // TOUCH INTERFACE DRAFT TODO
+    //log('has touch? ', hasTouch);
+    (function() {
+        if (hasTouch) {
+            var W = SCREEN_DIMS[0];
+            var H = SCREEN_DIMS[1];
+            var w = W/8;//60;
+            var h = w;
+            var dt = (W - w*2) / 2;
+            dt *= 0.25;
+
+            var leftBtn, rightBtn, jumpBtn;
+            var h2 = H-h-dt;
+            leftBtn  = s.rect( 0   + dt, h2, w, h);
+            rightBtn = s.rect( W-w - dt, h2, w, h);
+            jumpBtn  = s.rect((W-w)/2,   h2, w, h);
+
+            var codes = [K_LEFT, K_RIGHT, K_SPACE];
+
+            var onTouch = function(ev) {
+                //var isDown = (ev.type === 'touchend');
+                //log(this.idx, isDown);
+                onKey({
+                    keyCode: codes[this.idx],
+                    type:    ( (ev.type === 'touchend') ? 'keyup' : 'keydown')
+                });
+            };
+
+            [leftBtn, rightBtn, jumpBtn].forEach(function(el, idx) {
+                el.attr({fill:'#444', opacity:0.33});
+                var cb = onTouch.bind({idx:idx});
+                el.touchstart(cb);
+                el.touchend(cb);
+            });
+        }
+        else {
+            document.body.classList.add('desktop');
+        }
+    })();
 
 
 
@@ -514,6 +581,7 @@
             raf(onFrame);
             window.addEventListener('keydown', onKey);
             window.addEventListener('keyup',   onKey);
+            window.addEventListener('resize', onResize);
         });
     };
 
