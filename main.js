@@ -144,7 +144,7 @@
         'ontouchstart' in document.documentElement ||
         'ontouchstart' in document
     );
-    hasTouch = true;
+    //hasTouch = true;
 
 
 
