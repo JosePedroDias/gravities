@@ -38,5 +38,12 @@
 		"radius": 10,
 		"position": [300, 300],
 		"color": "red"
-	}
+	},
+    {
+        "type": "actor",
+        "dims": [20, 20],
+        "controlledBy": "bot1",
+        "position": [200, 100],
+        "color": "#3F3"
+    }
 ]

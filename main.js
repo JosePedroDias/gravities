@@ -293,6 +293,10 @@
             }
         };
 
+        if ('controlledBy' in o) {
+    		api._controlledBy = o.controlledBy;
+    	}
+
         api._pos = o.position || [0, 0];
         api._rot = o.rotation || 0;
         api.setPosRot();
@@ -390,8 +394,10 @@
                 function(fixture) {
                     aboveStuff = true;
                     var udParts = fixture.GetBody().GetUserData().split(' ');
-                    if (udParts[0] === 'token') {
-                        log('- #' + udParts[1] + ' (' +  udParts[0] + ')');
+                    var type = udParts[0];
+                    var id   = udParts[1];
+                    if (type === 'token') { // TODO || type === 'actor') {
+                        //log('- #' + id + ' (' +  type + ')');
                         toKill.push( BY_ID[ udParts[1] ] );
                     }
                 } :
@@ -425,8 +431,12 @@
 
 
         ACTORS.forEach(function(actor) {
+        	if (actor._controlledBy !== 'player') {
+        		actor.applyNormal(currPlanetPos, 0, {align:true, tangent:true});
+        		return;
+        	}
+
             if (actor._isAboveStuff && KEYS_WENT_DOWN[K_SPACE]) { // actor must be on the ground!
-                //log('JUMP');
                 play('boing');
                 actor.applyNormal(currPlanetPos, -10000000, {impulse:true});
             }
@@ -536,10 +546,7 @@
                 var id = o.id || 'auto' + (autoId++);
                 var data = [o.type, id].join(' ');
                 if (o.type === 'planet') {
-                    visualShape = createShape({
-                        radius:   o.radius,
-                        position: o.position
-                    });
+                    visualShape = createShape(o);
                     visualShape._b = createBody({
                         radius:   o.radius,
                         position: o.position,
@@ -550,11 +557,7 @@
                     CURRENT_PLANET = visualShape; // last planet is default
                 }
                 else if (o.type === 'actor') {
-                    visualShape = createShape({
-                        dims:         o.dims,
-                        position:     o.position,
-                        controlledBy: o.controlledBy
-                    });
+                    visualShape = createShape(o);
                     visualShape._b = createBody({
                         dims:     o.dims,
                         position: o.position,
@@ -563,14 +566,11 @@
                     ACTORS.push(visualShape);
                 }
                 else if (o.type === 'token') {
-                    visualShape = createShape({
-                        radius:   o.radius,
-                        position: o.position
-                    });
+                    visualShape = createShape(o);
                     visualShape._b = createBody({
                         radius:      o.radius,
                         position:    o.position,
-                        //friction:    1,
+                        friction:    1,
                         //restitution: 0,
                         density:     0.1,
                         data:        data
