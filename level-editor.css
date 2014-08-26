@@ -1,3 +1,7 @@
+* {
+    box-sizing: border-box;
+}
+
 body {
     padding: 0;
     margin: 0;
@@ -11,7 +15,52 @@ svg {
 }
 
 #gui {
-    width: 200px;
+    z-index: 1;
+    position: absolute;
+    right:   10px;
+    top:     10px;
+    width:  200px;
     height: 400px;
+    opacity: 0.8;
     background-color: #BBB;
+}
+
+#gui .toolbar {
+    position: relative;
+    height: 40px;
+}
+
+#gui .toolbar button {
+    position: relative;
+    left: 0;
+    top: 0;
+    padding: 0;
+    margin: 0;
+}
+
+#gui .section {
+    border: 1px solid #000;
+}
+
+#gui > .section > label {
+    display: block;
+    padding: 2px 2px;
+    background-color: blue;
+    color: #FFF;
+}
+
+#gui p {
+    position: relative;
+    margin: 0;
+}
+
+#gui p > label {
+    font-weight: bold;
+}
+
+#gui p > input {
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 60%;
 }

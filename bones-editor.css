@@ -1,0 +1,22 @@
+body {
+    padding: 0;
+    margin: 0;
+    overflow: hidden;
+    height: 100%;
+    font-family: sans-serif;
+}
+
+svg {
+    background-color: #7AF;
+}
+
+#gui {
+    z-index: 1;
+    position: absolute;
+    right:   10px;
+    top:     10px;
+    width:  200px;
+    height: 400px;
+    opacity: 0.8;
+    background-color: #BBB;
+}
