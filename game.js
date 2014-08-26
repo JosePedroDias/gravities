@@ -68,7 +68,7 @@
             createjs.Sound.registerSound('sfx/' + soundId + '.ogg', soundId);
         });
     };
-    
+
 
 
     /**********************************************
@@ -154,10 +154,10 @@
         //else {
             SCREEN_DIMS = [window.innerWidth, window.innerHeight];
         //}
-        
+
         //log('resize', SCREEN_DIMS);
         if (s) {
-            s.attr({ 
+            s.attr({
                 width:  SCREEN_DIMS[0],
                 height: SCREEN_DIMS[1]
             });
@@ -323,7 +323,7 @@
         }
         else if ('dims' in o) {
             fixDef.shape = new PolygonShape();
-            fixDef.shape.SetAsBox(o.dims[0]/2, o.dims[1]/2); // half w, half h            
+            fixDef.shape.SetAsBox(o.dims[0]/2, o.dims[1]/2); // half w, half h
         }
         else {
             throw 'either radius or dims must be provided!';
@@ -367,7 +367,7 @@
         DT = T - PREV_T;
 
         WORLD.Step(DT*10, 10, 10); // box2D step - step duration in secs, vel iters, pos iters
-        
+
         WORLD.ClearForces();
 
 
@@ -423,7 +423,7 @@
         TOKENS.forEach(function(token) {
             token.applyPointGravity(currPlanetPos, 1000);
         });
-        
+
         ACTORS.forEach(function(actor) {
             actor.applyPointGravity(currPlanetPos, 1000);
         });
@@ -456,13 +456,13 @@
                 v.Multiply(-tangVel*50);
                 actor._b.ApplyForce( v , actor.getPosition(true) );
             }
-            
+
             if (dir) {
                 actor.applyNormal(currPlanetPos, 1000*dir, {align:true, tangent:true});
             }
         });
 
-        
+
 
         fpsText.attr({text:'FPS: ' + Math.round(1 / DT) });
 
@@ -490,7 +490,7 @@
         } catch (ex) {}
     };
 
-    // TOUCH INTERFACE DRAFT TODO
+    // TOUCH INTERFACE
     //log('has touch? ', hasTouch);
     (function() {
         if (hasTouch) {
@@ -526,7 +526,7 @@
 
             window.ontouchstart = function(ev) {
                 ev.preventDefault();
-            }
+            };
         }
         else {
             document.body.classList.add('desktop');
@@ -584,7 +584,7 @@
             });
 
             PLAYER = BY_ID['player'];
-    
+
             // fire processes...
             raf(onFrame);
             window.addEventListener('keydown', onKey);
@@ -598,7 +598,7 @@
     preloadSfx(function(err) {
         if (err) { return window.alert(err); }
         //log('DONE LOADING SFX');
-        loadLevel('level1.json');
+        loadLevel('levels/1.json');
     });
 
 })();
