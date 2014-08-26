@@ -1,8 +1,5 @@
 ## ONGOING
 
-* (input)      touch interface - change elements order
-* (directing)  window resize should resize svg!
-
 
 ## TODO
 

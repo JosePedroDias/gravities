@@ -1,4 +1,4 @@
-(function() {
+//(function() {
     'use strict';
 
 
@@ -144,23 +144,26 @@
         'ontouchstart' in document.documentElement ||
         'ontouchstart' in document
     );
+    hasTouch = true;
 
 
 
     var s;
     var onResize = function() {
-        if (hasTouch) { // HACK
-            SCREEN_DIMS = [screen.availWidth, screen.availHeight];
-        }
-        else {
+        //if (hasTouch) { // HACK
+        //    SCREEN_DIMS = [screen.availWidth, screen.availHeight];
+        //}
+        //else {
             SCREEN_DIMS = [window.innerWidth, window.innerHeight];
-        }
+        //}
         
-        /*log('resize', SCREEN_DIMS); // TODO
-        s.attr({ 
-            width:  SCREEN_DIMS[0],
-            height: SCREEN_DIMS[1]
-        });*/
+        //log('resize', SCREEN_DIMS);
+        if (s) {
+            s.attr({ 
+                width:  SCREEN_DIMS[0],
+                height: SCREEN_DIMS[1]
+            });
+        }
     };
     onResize();
 
@@ -169,7 +172,8 @@
     var S = Snap;
     s = S(SCREEN_DIMS[0], SCREEN_DIMS[1]);
 
-
+    var rootEl = s.g();
+    var guiEl  = s.g();
 
     var fpsText = s.text(10, 20, 'FPS: ');
     fpsText.attr({'font-family': 'sans-serif'});
@@ -187,6 +191,7 @@
         }
 
         var g = s.g(shape);
+        rootEl.append(g);
 
         var api = {
             setPosRot: function(pos, rot) {
@@ -504,6 +509,7 @@
             };
 
             [leftBtn, rightBtn, jumpBtn].forEach(function(el, idx) {
+                guiEl.append(el);
                 el.attr({fill:'#444', opacity:0.33});
                 var cb = onTouch.bind({idx:idx});
                 el.touchstart(cb);
@@ -595,6 +601,4 @@
         loadLevel('level1.json');
     });
 
-    
-
-})();
+//})();
