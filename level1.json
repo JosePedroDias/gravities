@@ -14,7 +14,7 @@
 		"color": "#3A6"
 	},
 	{
-		"type": "box",
+		"type": "actor",
 		"id": "player",
 		"dims": [20, 20],
 		"controlledBy": "player",
@@ -22,19 +22,19 @@
 		"color": "#A22"
 	},
 	{
-		"type": "ball",
+		"type": "token",
 		"radius": 10,
 		"position": [300, 100],
 		"color": "yellow"
 	},
 	{
-		"type": "ball",
+		"type": "token",
 		"radius": 10,
 		"position": [100, 300],
 		"color": "orange"
 	},
 	{
-		"type": "ball",
+		"type": "token",
 		"radius": 10,
 		"position": [300, 300],
 		"color": "red"

@@ -1,4 +1,4 @@
-//(function() {
+(function() {
     'use strict';
 
 
@@ -7,8 +7,6 @@
      * GLOBAL VARS *
      ***************/
     var DEG2RAD = 180 / Math.PI;
-    //var RAD2DEG = Math.PI / 180;
-
     var SCREEN_DIMS;
 
     var     DT = 1 / 30;
@@ -24,12 +22,12 @@
 
 
 
-    var PLANETS = [];
     var BY_ID = {};
+    var PLANETS = [];
     var CURRENT_PLANET;
-    var BOXES = [];
-    var PLAYER; // user controlled box
-    var BALLS = [];
+    var TOKENS = [];
+    var ACTORS = [];
+    var PLAYER; // user controlled actor
 
 
 
@@ -371,41 +369,41 @@
 
 
         // updates box2D-controlled visual entities
-        BALLS.forEach(function(ball) {
-            ball.update();
+        TOKENS.forEach(function(token) {
+            token.update();
         });
 
         var toKill = [];
 
-        BOXES.forEach(function(box) {
-            box.update();
+        ACTORS.forEach(function(actor) {
+            actor.update();
 
-            // detect if anything exists 3px below the 20x20 box
-            var boxAboveStuff = false;
-            var bp = box.getPosition(true);
+            // detect if anything exists 3px below the 20x20 actor's box
+            var aboveStuff = false;
+            var bp = actor.getPosition(true);
             var v = bp.Copy();
             v.Subtract( CURRENT_PLANET.getPosition(true) );
             v.Normalize();
             v.Multiply(-13);
             v.Add(bp);
-            var cb = (box === PLAYER) ?
+            var cb = (actor === PLAYER) ?
                 function(fixture) {
-                    boxAboveStuff = true;
+                    aboveStuff = true;
                     var udParts = fixture.GetBody().GetUserData().split(' ');
-                    if (udParts[0] === 'ball') {
+                    if (udParts[0] === 'token') {
                         log('- #' + udParts[1] + ' (' +  udParts[0] + ')');
                         toKill.push( BY_ID[ udParts[1] ] );
                     }
                 } :
-                function() { boxAboveStuff = true; };
+                function() { aboveStuff = true; };
             WORLD.QueryPoint(cb, v);
-            box._isAboveStuff = boxAboveStuff;
+            actor._isAboveStuff = aboveStuff;
         });
 
         toKill.forEach(function(visualShape) {
             var udParts = visualShape._b.GetUserData().split(' ');
             var type = udParts[0];
-            var arr = (type === 'box') ? BOXES : BALLS;
+            var arr = (type === 'actor') ? ACTORS : TOKENS;
             arr.splice(arr.indexOf(visualShape), 1);
             play('item');
             visualShape.remove();
@@ -413,44 +411,44 @@
 
 
 
-        // apply current planet gravity to boxes and balls
+        // apply current planet gravity to actors and tokens
         var currPlanetPos = CURRENT_PLANET._pos;
 
-        BALLS.forEach(function(ball) {
-            ball.applyPointGravity(currPlanetPos, 1000);
+        TOKENS.forEach(function(token) {
+            token.applyPointGravity(currPlanetPos, 1000);
         });
         
-        BOXES.forEach(function(box) {
-            box.applyPointGravity(currPlanetPos, 1000);
+        ACTORS.forEach(function(actor) {
+            actor.applyPointGravity(currPlanetPos, 1000);
         });
 
 
 
-        BOXES.forEach(function(box) {
-            if (box._isAboveStuff && KEYS_WENT_DOWN[K_SPACE]) { // box must be on the ground!
+        ACTORS.forEach(function(actor) {
+            if (actor._isAboveStuff && KEYS_WENT_DOWN[K_SPACE]) { // actor must be on the ground!
                 //log('JUMP');
                 play('boing');
-                box.applyNormal(currPlanetPos, -10000000, {impulse:true});
+                actor.applyNormal(currPlanetPos, -10000000, {impulse:true});
             }
 
             var dir = 0;
             if      (KEYS[K_LEFT]) {  dir =  1; }
             else if (KEYS[K_RIGHT]) { dir = -1; }
             else {
-                var v = box.getPosition(true).Copy();
+                var v = actor.getPosition(true).Copy();
                 v.Subtract( CURRENT_PLANET.getPosition(true) );
                 v.Normalize();
                 v.CrossFV(1);
-                var vel = box._b.GetLinearVelocity();
+                var vel = actor._b.GetLinearVelocity();
                 var tangVel = compOfAInB(vel, v);
 
-                box.applyNormal(currPlanetPos, 0, {align:true, tangent:true});
+                actor.applyNormal(currPlanetPos, 0, {align:true, tangent:true});
                 v.Multiply(-tangVel*50);
-                box._b.ApplyForce( v , box.getPosition(true) );
+                actor._b.ApplyForce( v , actor.getPosition(true) );
             }
             
             if (dir) {
-                box.applyNormal(currPlanetPos, 1000*dir, {align:true, tangent:true});
+                actor.applyNormal(currPlanetPos, 1000*dir, {align:true, tangent:true});
             }
         });
 
@@ -465,7 +463,6 @@
         KEYS_WENT_DOWN = {};
         KEYS_WENT_UP   = {};
     };
-    //raf(onFrame);
 
 
 
@@ -478,6 +475,9 @@
         KEYS[kc] = isDown;
         var o = (isDown ? KEYS_WENT_DOWN : KEYS_WENT_UP);
         o[kc] = true;
+        try {
+            ev.preventDefault();
+        } catch (ex) {}
     };
 
     // TOUCH INTERFACE DRAFT TODO
@@ -500,8 +500,6 @@
             var codes = [K_LEFT, K_RIGHT, K_SPACE];
 
             var onTouch = function(ev) {
-                //var isDown = (ev.type === 'touchend');
-                //log(this.idx, isDown);
                 onKey({
                     keyCode: codes[this.idx],
                     type:    ( (ev.type === 'touchend') ? 'keyup' : 'keydown')
@@ -515,6 +513,10 @@
                 el.touchstart(cb);
                 el.touchend(cb);
             });
+
+            window.ontouchstart = function(ev) {
+                ev.preventDefault();
+            }
         }
         else {
             document.body.classList.add('desktop');
@@ -547,7 +549,7 @@
                     PLANETS.push(visualShape);
                     CURRENT_PLANET = visualShape; // last planet is default
                 }
-                else if (o.type === 'box') {
+                else if (o.type === 'actor') {
                     visualShape = createShape({
                         dims:         o.dims,
                         position:     o.position,
@@ -558,9 +560,9 @@
                         position: o.position,
                         data:     data
                     });
-                    BOXES.push(visualShape);
+                    ACTORS.push(visualShape);
                 }
-                else if (o.type === 'ball') {
+                else if (o.type === 'token') {
                     visualShape = createShape({
                         radius:   o.radius,
                         position: o.position
@@ -573,7 +575,7 @@
                         density:     0.1,
                         data:        data
                     });
-                    BALLS.push(visualShape);
+                    TOKENS.push(visualShape);
                 }
 
                 BY_ID[id] = visualShape;
@@ -595,10 +597,8 @@
 
     preloadSfx(function(err) {
         if (err) { return window.alert(err); }
-        //log('DONE SFX', err);
-        //play('boing');
-
+        //log('DONE LOADING SFX');
         loadLevel('level1.json');
     });
 
-//})();
+})();

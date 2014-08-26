@@ -4,7 +4,6 @@
 ## TODO
 
 * (directing)  center camera on player with memory
-* (game logic) refactor entity types to (actor, prop, planet)
 * (game logic) count progress by stars catched
 * (game logic) implement exit portal
 * (game logic) enemies kill you if not killed from above (mario-like)
@@ -16,6 +15,7 @@
 * (obstacles)  moving platforms
 * (levels)     create relatively simple editor
 * (levels)     create some fun levels
+* (visuals)    destruction animation
 * (visuals)    animation for current planet applying gravity (concentric rings)
 * (visuals)    sprites for hero - standing, walking left & right, jumping
 * (visuals)    sprites for enemies - same logic as above
