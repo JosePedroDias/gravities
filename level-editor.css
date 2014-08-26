@@ -2,6 +2,8 @@
     box-sizing: border-box;
 }
 
+
+
 body {
     padding: 0;
     margin: 0;
@@ -20,14 +22,21 @@ svg {
     right:   10px;
     top:     10px;
     width:  200px;
-    height: 400px;
     opacity: 0.8;
-    background-color: #BBB;
+}
+
+#entities {
+    display: block;
+    width: 100%;
+    overflow-y: auto;
+    font-size: 11px;
+    font-family: sans-serif;
 }
 
 #gui .toolbar {
     position: relative;
-    height: 40px;
+    font-size: 0;
+    sheight: 40px;
 }
 
 #gui .toolbar button {
@@ -36,10 +45,38 @@ svg {
     top: 0;
     padding: 0;
     margin: 0;
+    border-width: 2px;
+    border-style: solid;
+    background-color:    #BBB;
+    border-top-color:    #FFF;
+    border-right-color:  #777;
+    border-bottom-color: #777;
+    border-left-color:   #FFF;
+    padding: 2px;
 }
 
-#gui .section {
-    border: 1px solid #000;
+
+#gui .toolbar button:hover {
+    background-color:    #777;
+    border-top-color:    #777;
+    border-right-color:  #FFF;
+    border-bottom-color: #FFF;
+    border-left-color:   #777;
+}
+
+
+#gui > .section {
+    border-width: 2px;
+    border-style: solid;
+    border-top-color:    #FFF;
+    border-right-color:  #777;
+    border-bottom-color: #777;
+    border-left-color:   #FFF;
+    padding: 2px;
+    font-size: 14px;
+    font-weight: bold;
+    background-color: #BBB;
+    margin-bottom: 4px;
 }
 
 #gui > .section > label {
@@ -56,11 +93,17 @@ svg {
 
 #gui p > label {
     font-weight: bold;
+    font-size: 11px;
+    color: #333;
 }
 
 #gui p > input {
+    font-size: 11px;
+    font-family: sans-serif;
     position: absolute;
     right: 0;
-    top: 0;
-    width: 60%;
+    top:   0;
+    width: 70%;
+    padding: 0;
+    margin:  0;
 }
