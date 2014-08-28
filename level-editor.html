@@ -13,21 +13,9 @@
     </head>
 
     <body>
-        <script type="text/javascript" src="level-editor.js"></script>
-
         <div id="gui">
             <div class="section">
-                <label>entities</label>
-                <select id="entities" size="10">
-                    <option>#id1 (circle)</option>
-                    <option>#id2 (rect)</option>
-                </select>
-                <div class="toolbar">
-                    <button class="ent-top"   >TOP</button>
-                    <button class="ent-up"    >UP</button>
-                    <button class="ent-down"  >DOWN</button>
-                    <button class="ent-bottom">BOTTOM</button>
-                </div>
+                <label>level</label>
                 <div class="toolbar">
                     <button class="lev-load">LOAD</button>
                     <button class="lev-save">SAVE</button>
@@ -35,16 +23,66 @@
             </div>
 
             <div class="section">
+                <label>tools</label>
+                <div class="toolbar">
+                    <button class="too-create"  >CREATE</button>
+                    <button class="too-move"    >MOVE</button>
+                    <button class="too-delete"  >DELETE</button>
+                </div>
+            </div>
+
+            <div class="section">
+                <label>entities</label>
+                <select id="entities" size="10">
+                </select>
+                <div class="toolbar">
+                    <button class="ent-top"   >TOP</button>
+                    <button class="ent-up"    >UP</button>
+                    <button class="ent-down"  >DOWN</button>
+                    <button class="ent-bottom">BOTTOM</button>
+                </div>
+            </div>
+
+            <div class="section" id="sec-properties">
                 <label>properties</label>
                 <p>
                     <label>id</label>
-                    <input type="text" value="xxx">
+                    <input type="text" id="pro-id" value="">
                 </p>
                 <p>
+                    <label>position</label>
+                    <input type="text" id="pro-position" value="">
+                </p>
+                <p>
+                    <label>shape</label>
+                    <select id="pro-shape">
+                        <option>circle</option>
+                        <option>rect</option>
+                    </select>
+                </p>
+                <p id="p-dims">
                     <label>dims</label>
-                    <input type="text" value="40,20">
+                    <input type="text" id="pro-dims" value="">
+                </p>
+                <p id="p-radius">
+                    <label>radius</label>
+                    <input type="text" id="pro-radius" value="">
+                </p>
+                <p>
+                    <label>color</label>
+                    <input type="text" id="pro-color" value="">
+                </p>
+                <p>
+                    <label>opacity</label>
+                    <input type="text" id="pro-opacity" value="">
+                </p>
+                <p>
+                    <label>type</label>
+                    <input type="text" id="pro-type" value="">
                 </p>
             </div>
         </div>
+
+        <script type="text/javascript" src="level-editor.js"></script>
     </body>
 </html>

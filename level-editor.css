@@ -36,7 +36,6 @@ svg {
 #gui .toolbar {
     position: relative;
     font-size: 0;
-    sheight: 40px;
 }
 
 #gui .toolbar button {
@@ -62,6 +61,10 @@ svg {
     border-right-color:  #FFF;
     border-bottom-color: #FFF;
     border-left-color:   #777;
+}
+
+#gui .toolbar button.selected {
+    background-color: red;
 }
 
 
@@ -97,7 +100,9 @@ svg {
     color: #333;
 }
 
-#gui p > input {
+#gui p > input,
+#gui p > select {
+    background-color: #FFF;
     font-size: 11px;
     font-family: sans-serif;
     position: absolute;
@@ -106,4 +111,14 @@ svg {
     width: 70%;
     padding: 0;
     margin:  0;
+}
+
+
+
+.shape-circle #p-dims {
+    display: none;
+}
+
+.shape-rect #p-radius {
+    display: none;
 }
